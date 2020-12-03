@@ -42,7 +42,7 @@ def map_to_grayscale(state):
         for x in X:
             val = 0
             for c in C:
-                val += c
+                val += state[y][x][c]
             mapped[y][x] = val / 3
     return mapped
 
