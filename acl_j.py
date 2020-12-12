@@ -3,10 +3,6 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-def normalize_probs(action_propabilities, eps):
-    for x in range(len(action_propabilities)):
-        if action_propabilities[x] == 0:
-            action_propabilities[x] = eps
 
 tf.compat.v1.enable_eager_execution()
 
@@ -42,9 +38,9 @@ if(load_snapshot):
     model = keras.models.load_model(load_snapshot)
 else:
     hidden_layer_1 = layers.Dense(hidden_layer_1_units, activation="relu")(inputs)
-    #hidden_layer_2 = layers.Dense(hidden_layer_2_units, activation="relu")(hidden_layer_1)
-    actions = layers.Dense(num_actions, activation="softmax", kernel_constraint=actions_constraint)(hidden_layer_1)
-    critic = layers.Dense(num_critic)(hidden_layer_1)
+    hidden_layer_2 = layers.Dense(hidden_layer_2_units, activation="relu")(hidden_layer_1)
+    actions = layers.Dense(num_actions, activation="softmax", kernel_constraint=actions_constraint)(hidden_layer_2)
+    critic = layers.Dense(num_critic)(hidden_layer_2)
     model = keras.Model(inputs=inputs, outputs=[actions, critic])
 
 optimizer = keras.optimizers.Adam(learning_rate=0.001)
@@ -81,9 +77,7 @@ while episode_count in range(num_episodes):
             
             action_probs, critic_value = model(state)
             critic_value_history.append(critic_value)
-
-            action_probs = action_probs[0].numpy()
-            normalize_probs(action_probs, eps)
+        
             action = np.random.choice(num_actions, p=np.squeeze(action_probs))
 
             print(critic_value.numpy()[0,0])
@@ -98,27 +92,25 @@ while episode_count in range(num_episodes):
             if(not done):
                 fut_action_probs, fut_critic_val = model(state)
                 time_diff += fut_critic_val.numpy()[0,0] * gamma
-            print(action_probs)
+            print(action_probs[0].numpy())
             # print("critic_value: {}".format(critic_value))
             # print(reward, time_diff)
 
-            log_prob = tf.math.log(action_probs[action])
-            log_action_probs = list(map(tf.math.log, action_probs))
-            args = [log_action_probs]
+            log_prob = tf.math.log(action_probs[0, action])
+            log_action_probs = list(map(lambda x: tf.math.log(x+eps), action_probs[0])) 
+            args = [log_action_probs, critic_value[0]]
             if zy is None:
-                zy = tape.gradient( args,model.trainable_variables)
+                zy = tape.gradient(args, model.trainable_variables)
             else:
                 tmp_zy = list(map(lambda m: tf.scalar_mul(_lamb_gamm_const, m) if m is not None else m, zy))
                 tmp2_zy = tape.gradient(args, model.trainable_variables)
                 zy = []
                 for i in range(len(tmp_zy)):
                     zy.append(tmp_zy[i] + tmp2_zy[i])
-                    i += 1
             td_zy = []
             for i in range(len(zy)):
                 td_zy.append(tf.scalar_mul(-time_diff, zy[i]))
-                i += 1
-
+            
             optimizer.apply_gradients(zip(td_zy, model.trainable_variables))
 
     episode_count += 1
