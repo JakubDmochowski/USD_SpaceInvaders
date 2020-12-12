@@ -4,10 +4,16 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 
+algorithm_name = "actor_critic"
+version = "1"
+
+load_snapshot = False # "./model_snapshots/model_actor_critic_lambda_1_ep95"
+episode_count = 0
+num_episodes = 100
+
 seed = 9
 gamma = 0.99 #discount factor
 max_steps_per_episode = 10000
-num_episodes = 100
 env = gym.make('SpaceInvaders-v0')
 env.seed(seed)
 eps = np.finfo(np.float32).eps.item()
@@ -101,3 +107,5 @@ while episode_count in range(num_episodes):
         
     print("episode {}: rewarded with {}".format(episode_count, episode_reward))
     episode_count += 1
+    if(not episode_count % 5):
+        model.save('./model_snapshots/model_{}_{}_ep{}'.format(algorithm_name, version, episode_count))

@@ -29,7 +29,6 @@ num_actions = 6
 
 inputs = layers.Input(shape=(num_inputs,))
 
-
 model = None
 
 if(load_snapshot):
@@ -95,7 +94,7 @@ while episode_count in range(num_episodes):
             else:
                 td = rewards_history[i] + gamma * critic_value_history[i+1] - critic_value_history[i]
             time_diffs.append(td)
-        
+        # PROBLEM POWTorzenia time_diff i returns
         returns = []
         discounted_sum = 0
         for r in rewards_history[::-1]:
@@ -121,8 +120,8 @@ while episode_count in range(num_episodes):
                 actor_loss = _lambda * gamma * actor_loss - log_prob * (ret-value)
                 critic_loss = _lambda * gamma * critic_loss + huber_loss(tf.expand_dims(value, 0), tf.expand_dims(ret, 0))
             print("actor_loss: {} | critic_loss: {}".format(actor_loss, critic_loss))
-            actor_losses.append(actor_loss * td)
-            critic_losses.append(critic_loss * td)
+            actor_losses.append(actor_loss)
+            critic_losses.append(critic_loss)
         actor_grads = actor_tape.gradient(actor_losses, model.trainable_variables)
         critic_grads = critic_tape.gradient(critic_losses, model.trainable_variables)
                         
