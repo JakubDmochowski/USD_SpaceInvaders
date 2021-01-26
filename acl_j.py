@@ -80,8 +80,8 @@ while episode_count in range(num_episodes):
         
             action = np.random.choice(num_actions, p=np.squeeze(action_probs))
 
-            print(critic_value.numpy()[0,0])
             state, reward, done, _ = env.step(action)
+            print(state)
             reward_history.append(reward)
             episode_reward += reward
             state = tf.convert_to_tensor(state)
@@ -92,7 +92,6 @@ while episode_count in range(num_episodes):
             if(not done):
                 fut_action_probs, fut_critic_val = model(state)
                 time_diff += fut_critic_val.numpy()[0,0] * gamma
-            print(action_probs[0].numpy())
             # print("critic_value: {}".format(critic_value))
             # print(reward, time_diff)
 
