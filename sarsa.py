@@ -1,12 +1,13 @@
 import numpy as np 
 import gym
+import json
 
 def to_state_index(state):
 	result = 0
 	for s in state:
 		result = result<<8
 		result = result | s
-	return result % 10_000_000
+	return hash(result) % 10_000_000
 
 
 
@@ -61,8 +62,7 @@ for episode in range(total_episodes):
 		action2 = choose_action(state2) 
 		
 		#Learning the Q-value 
-		if reward != 0:
-			print(reward)
+		print(to_state_index(state2))
 		update(state1, state2, reward, action1, action2) 
 
 		state1 = state2 
@@ -76,6 +76,10 @@ for episode in range(total_episodes):
 		if done: 
 			break
 	print(reward)
+	if episode %100 == 0:
+		f = open(str(episode) + '.json', 'w')
+		f.write(json.dumps(Q.tolist()))
+		f.close()
 #Evaluating the performance 
 print ("Performace : ", reward/total_episodes) 
 
